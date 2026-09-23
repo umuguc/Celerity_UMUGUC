@@ -2,6 +2,48 @@
 <img src="docs/celerity_logo.png" alt="Celerity Logo">
 </p>
 
+# Celerity UMUGUC
+
+This repository is a fork of the [Celerity runtime](https://github.com/celerity/celerity-runtime), based on Celerity 0.7.1 and developed in the UMUGUC project.
+It adds **transparent data compression for buffers**: a buffer stores its data in a compressed type, and kernels and host tasks work on the uncompressed values.
+Everything else behaves like Celerity `master`, so the upstream documentation below still applies.
+
+## Differences from Celerity `master`
+
+- **Compressed buffers.** `celerity::buffer` takes the compression as an optional third template parameter, `buffer<T, Dims, Compression>`.
+  Without it, a buffer behaves exactly as before (`compression::uncompressed`).
+- **Three compression categories** (`include/compression.h`), which decide where the data is uncompressed:
+  - `element_wise`: every accessor read decompresses and every write compresses a single element. The accessor is used as usual.
+  - `local_memory`: `acc.decompress_data(item, allocator, chunk)` decompresses a chunk into work-group local memory, and recompresses it at the end of its scope for writing accessors.
+  - `global_memory`: `acc.decompress_data(item, chunk)` decompresses a chunk into a per-device scratch copy in global memory that all work groups share. A per-chunk state tracker makes sure a chunk is decompressed and compressed only once at a time. Such a buffer needs `buffer.init(queue)` before its first use.
+- **Compression algorithms** (`include/compression_algorithms.h`): `quantization_compression`, `conversion_compression`, `point_cloud_compression`, `point_cloud_with_dep_compression` and `z_curve_hybrid_compression`.
+  New algorithms are added by specializing `compressed<>` and wrapping it in a `compression_object_skeleton`.
+- **Host tasks** read compressed buffers with `acc.decompress_data()`, which returns all values uncompressed.
+- **Runtime changes needed by the compression:**
+  - `chunk` carries the work-group size (`local_range`), so range mappers can map whole work groups.
+  - New helper `detail::get_nd_index`.
+  - The runtime exposes `get_local_nid()`, `get_num_nodes()` and `get_num_local_devices()`, which compressed buffers use to allocate one scratch and state tracking row per device.
+- **Examples:** `wave_sim_compression` (element-wise, local and global memory variants and a specialized compression) and `nd_range_wave_sim`.
+- **Tests:** `test/compression_algorithm_tests.cc` and `test/compression_interface_tests.cc`.
+
+```cpp
+// Points stored as half-precision offsets, decompressed into global memory on demand
+using point_compression = celerity::point_cloud_compression<Point, sycl::vec<sycl::half, 3>, celerity::compression_category::global_memory>;
+
+point_compression compression{Point{x_min, y_min, 0}, block_size};
+celerity::buffer<Point, 3, point_compression> points({width, height, points_per_block}, compression);
+points.init(queue);
+
+queue.submit([&](celerity::handler& cgh) {
+	celerity::accessor acc{points, cgh, celerity::access::one_to_one{}, celerity::read_only};
+	cgh.parallel_for(celerity::nd_range<3>{points.get_range(), {1, 1, points_per_block}}, [=](celerity::nd_item<3> item) {
+		auto block = acc.decompress_data(item); // uncompressed view of this work group's chunk
+		// ... block[{x, y, i}] ...
+	});
+});
+```
+---
+
 # Celerity Runtime — [![CI Workflow](https://github.com/celerity/celerity-runtime/actions/workflows/celerity_ci.yml/badge.svg)](https://github.com/celerity/celerity-runtime/actions/workflows/celerity_ci.yml) [![Coverage Status](https://coveralls.io/repos/github/celerity/celerity-runtime/badge.svg?branch=master)](https://coveralls.io/github/celerity/celerity-runtime?branch=master) [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/celerity/celerity-runtime/blob/master/LICENSE) [![Semver 2.0](https://img.shields.io/badge/semver-2.0.0-blue)](https://semver.org/spec/v2.0.0.html) [![PRs # Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/celerity/celerity-runtime/blob/master/CONTRIBUTING.md)
 
 The Celerity distributed runtime and API aims to bring the power and ease of

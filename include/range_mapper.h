@@ -126,7 +126,7 @@ namespace detail {
 
 	enum class range_mapper_type;
 
-	// TODO: This is just for R&D
+	// NOTE: This is needed to be exposed for compressed accessors, which read the range mapper parameters
 	template <int Dims, detail::range_mapper_type Kind>
 	struct static_range_mapper_data;
 
@@ -160,7 +160,7 @@ namespace access {
 		}
 
 	  private:
-		// TODO: This is just for R&D
+		// NOTE: This is needed to be exposed for compressed accessors, which read the range mapper parameters
 		template <int Dim, celerity::detail::range_mapper_type Kind>
 		friend struct celerity::detail::static_range_mapper_data;
 
@@ -179,7 +179,7 @@ namespace access {
 		}
 
 	  private:
-		// TODO: This is just for R&D
+		// NOTE: This is needed to be exposed for compressed accessors, which read the range mapper parameters
 		template <int Dim, celerity::detail::range_mapper_type Kind>
 		friend struct celerity::detail::static_range_mapper_data;
 
@@ -244,7 +244,7 @@ namespace access {
 	  private:
 		friend struct celerity::detail::range_mapper_testspy;
 
-		// TODO: This is just for R&D
+		// NOTE: This is needed to be exposed for compressed accessors, which read the range mapper parameters
 		template <int Dim, celerity::detail::range_mapper_type Kind>
 		friend struct celerity::detail::static_range_mapper_data;
 

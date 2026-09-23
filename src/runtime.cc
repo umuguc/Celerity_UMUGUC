@@ -128,10 +128,10 @@ namespace detail {
 
 		void flush_scheduler();
 
-		// TODO: FIND a way to make this by far better
-		node_id NOCOMMIT_get_local_nid() const { return m_local_nid; }
-		size_t NOCOMMIT_get_num_nodes() const { return m_num_nodes; }
-		size_t NOCOMMIT_get_num_local_devices() const { return m_num_local_devices; }
+		// NOTE: This is needed to be exposed for compressed buffers, which allocate one scratch and state tracking row per device
+		node_id get_local_nid() const { return m_local_nid; }
+		size_t get_num_nodes() const { return m_num_nodes; }
+		size_t get_num_local_devices() const { return m_num_local_devices; }
 
 	  private:
 		friend struct runtime_testspy;
@@ -774,9 +774,9 @@ namespace detail {
 
 	void runtime::flush_scheduler() { m_impl->flush_scheduler(); }
 
-	node_id runtime::NOCOMMIT_get_local_nid() const { return m_impl->NOCOMMIT_get_local_nid(); }
-	size_t runtime::NOCOMMIT_get_num_nodes() const { return m_impl->NOCOMMIT_get_num_nodes(); }
-	size_t runtime::NOCOMMIT_get_num_local_devices() const { return m_impl->NOCOMMIT_get_num_local_devices(); }
+	node_id runtime::get_local_nid() const { return m_impl->get_local_nid(); }
+	size_t runtime::get_num_nodes() const { return m_impl->get_num_nodes(); }
+	size_t runtime::get_num_local_devices() const { return m_impl->get_num_local_devices(); }
 
 	bool runtime::s_test_mode = false;
 	bool runtime::s_test_active = false;

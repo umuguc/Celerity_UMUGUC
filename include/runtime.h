@@ -68,10 +68,10 @@ namespace detail {
 
 		void flush_scheduler();
 
-		// TODO: those are temporary, looking into some ways to expose this info for development
-		node_id NOCOMMIT_get_local_nid() const;
-		size_t NOCOMMIT_get_num_nodes() const;
-		size_t NOCOMMIT_get_num_local_devices() const;
+		// NOTE: This is needed to be exposed for compressed buffers, which allocate one scratch and state tracking row per device
+		node_id get_local_nid() const;
+		size_t get_num_nodes() const;
+		size_t get_num_local_devices() const;
 
 	  private:
 		class impl;
